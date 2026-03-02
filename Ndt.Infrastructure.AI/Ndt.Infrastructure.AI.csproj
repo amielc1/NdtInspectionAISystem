@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ndt.Domain\Ndt.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SemanticKernel" Version="1.72.0" />
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.Google" Version="1.72.0-alpha" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Prompts\WeldAnalysis\skprompt.txt" />
+    <EmbeddedResource Include="Prompts\WeldAnalysis\skprompt.txt" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>
