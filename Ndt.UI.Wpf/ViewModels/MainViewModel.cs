@@ -7,8 +7,19 @@ using System.IO;
 
 namespace Ndt.UI.Wpf.ViewModels;
 
-public partial class MainViewModel(IImageProcessor imageProcessor, IAiAnalysisService aiService) : ObservableObject
+public partial class MainViewModel : ObservableObject
 {
+    public MainViewModel(IImageProcessor imageProcessor, IAiAnalysisService aiService)
+    {
+        this.imageProcessor = imageProcessor;
+        this.aiService = aiService;
+        
+        // Subscribe to AI-triggered defect detection
+        aiService.DefectsDetected += OnDefectsDetected;
+    }
+
+    private readonly IImageProcessor imageProcessor;
+    private readonly IAiAnalysisService aiService;
     [ObservableProperty]
     private byte[]? _originalImage;
 
@@ -93,6 +104,35 @@ public partial class MainViewModel(IImageProcessor imageProcessor, IAiAnalysisSe
         var processed = imageProcessor.ApplyHistogramStretching(OriginalImage, true);
         UpdateDisplayImage(processed);
         StatusText = "Equalized stretch applied.";
+    }
+
+    [RelayCommand]
+    private async Task AnalyzeWithAi()
+    {
+        if (OriginalImage == null) return;
+
+        IsBusy = true;
+        StatusText = "AI performing Handlebars-based analysis...";
+        
+        try
+        {
+            // For now, hardcode "Steel" as material
+            var response = await aiService.AnalyzeWithHandlebarsAsync(OriginalImage, "Steel");
+            
+            AnalysisSummary = response;
+            ChatHistory.Add(new ChatMessage(response, MessageSender.AI, DateTime.Now));
+            StatusText = "AI analysis complete.";
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"AI Error: {ex.Message}";
+            AnalysisSummary = $"An AI error occurred: {ex.Message}";
+            ChatHistory.Add(new ChatMessage($"Error: {ex.Message}", MessageSender.AI, DateTime.Now));
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     [RelayCommand]

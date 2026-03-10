@@ -5,6 +5,7 @@ using Microsoft.SemanticKernel.Connectors.Google;
 using Ndt.Domain;
 using Ndt.Infrastructure.AI.Plugins; 
 using Microsoft.SemanticKernel.ChatCompletion;
+using Microsoft.SemanticKernel.PromptTemplates.Handlebars;
 using Microsoft.SemanticKernel.Planning.Handlebars;
 
 namespace Ndt.Infrastructure.AI;
@@ -118,6 +119,48 @@ public class AiService  : IAiAnalysisService
 
         // 4. Invoke
         var result = await _kernel.InvokeAsync(analysisFunction, arguments);
+        return result.ToString();
+    }
+
+    public async Task<string> AnalyzeWithHandlebarsAsync(byte[] image, string material)
+    {
+        // 1. Set the image in the plugin context
+        _visionPlugin.CurrentImage = image;
+
+        // 2. Load the Handlebars template
+        var assembly = Assembly.GetExecutingAssembly();
+        using var stream = assembly.GetManifestResourceStream("Ndt.Infrastructure.AI.Prompts.WeldAnalysis.analysis.handlebars");
+        using var reader = new StreamReader(stream!);
+        var template = await reader.ReadToEndAsync();
+        var factory = new HandlebarsPromptTemplateFactory();
+        var config = new PromptTemplateConfig()
+        {
+            Template = template,
+            TemplateFormat = "handlebars",
+            Name = "HandlebarsAnalysis",
+        };
+        // 3. Create the function using Handlebars template engine
+        // var handlebarsFunction = _kernel.CreateFunctionFromPrompt(
+        //     config, factory
+        // );
+
+        // 3. Invoke with parameters
+        var arguments = new KernelArguments()
+        {
+            ["material"] = material
+        };
+
+        // Render the prompt with plugins registered in the kernel
+        var promptTemplate = factory.Create(config);
+        string? renderedPrompt = await promptTemplate.RenderAsync(_kernel, arguments);
+        
+        if (string.IsNullOrEmpty(renderedPrompt))
+        {
+            return "Error: Rendered prompt is empty or null. Check if the template contains valid Handlebars syntax and all plugin functions are available.";
+        }
+        
+        // Final invoke using the fully rendered prompt
+        var result = await _kernel.InvokePromptAsync(renderedPrompt, arguments);
         return result.ToString();
     }
 }

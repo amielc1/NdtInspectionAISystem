@@ -7,12 +7,15 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.SemanticKernel" Version="1.72.0" />
     <PackageReference Include="Microsoft.SemanticKernel.Connectors.Google" Version="1.72.0-alpha" />
+    <PackageReference Include="Microsoft.SemanticKernel.PromptTemplates.Handlebars" Version="1.72.0" />
     <PackageReference Include="Microsoft.SemanticKernel.Planners.Handlebars" Version="1.47.0-preview" />
   </ItemGroup>
 
   <ItemGroup>
     <None Remove="Prompts\WeldAnalysis\skprompt.txt" />
     <EmbeddedResource Include="Prompts\WeldAnalysis\skprompt.txt" />
+    <None Remove="Prompts\WeldAnalysis\analysis.handlebars" />
+    <EmbeddedResource Include="Prompts\WeldAnalysis\analysis.handlebars" />
   </ItemGroup>
 
   <PropertyGroup>
