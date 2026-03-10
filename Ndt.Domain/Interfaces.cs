@@ -12,4 +12,5 @@ public interface IAiAnalysisService
     event Action<List<Defect>>? DefectsDetected;
     Task<string> AnalyzeImageAsync(byte[] image, List<Defect> defects);
     Task<string> AskQuestionAboutImageAsync(byte[] image, string userQuestion);
+    Task<string> AskQuestionAsync(string userQuestion);
 }

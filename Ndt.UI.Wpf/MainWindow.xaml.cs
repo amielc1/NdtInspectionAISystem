@@ -112,4 +112,9 @@ public partial class MainWindow : Window
             Console.WriteLine($"[DEBUG_LOG] ROI updated: X={vm.RoiX}, Y={vm.RoiY}, W={vm.RoiWidth}, H={vm.RoiHeight}");
         }
     }
+
+    private void OnAskButtonClick(object sender, RoutedEventArgs e)
+    {
+        QuestionTextBox.Focus();
+    }
 }

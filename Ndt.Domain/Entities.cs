@@ -16,3 +16,15 @@ public record ProcessingResult(
     List<Defect> Defects,
     string AnalysisSummary
 );
+
+public enum MessageSender
+{
+    User,
+    AI
+}
+
+public record ChatMessage(
+    string Content,
+    MessageSender Sender,
+    DateTime Timestamp
+);

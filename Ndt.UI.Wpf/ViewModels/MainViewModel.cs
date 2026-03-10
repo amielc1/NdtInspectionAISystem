@@ -25,10 +25,19 @@ public partial class MainViewModel(IImageProcessor imageProcessor, IAiAnalysisSe
     private string _analysisSummary = string.Empty;
 
     [ObservableProperty]
+    private ObservableCollection<ChatMessage> _chatHistory = new();
+
+    [ObservableProperty]
     private string _userQuestion = string.Empty;
 
     [ObservableProperty]
+    private bool _useImageInChat = true;
+
+    [ObservableProperty]
     private bool _isBusy;
+
+    [ObservableProperty]
+    private bool _sendWithImage = true;
 
     [ObservableProperty]
     private int _roiX = 0;
@@ -57,6 +66,8 @@ public partial class MainViewModel(IImageProcessor imageProcessor, IAiAnalysisSe
                 var imageBytes = File.ReadAllBytes(openFileDialog.FileName);
                 OriginalImage = imageBytes;
                 UpdateDisplayImage(imageBytes);
+                ChatHistory.Clear();
+                AnalysisSummary = string.Empty;
                 StatusText = $"Loaded: {Path.GetFileName(openFileDialog.FileName)}";
             }
             catch (Exception ex)
@@ -85,46 +96,80 @@ public partial class MainViewModel(IImageProcessor imageProcessor, IAiAnalysisSe
     }
 
     [RelayCommand]
-    private async Task Analyze()
+    private async Task AnalyzeManual()
     {
         if (OriginalImage == null) return;
         
         IsBusy = true;
-        StatusText = "Analyzing...";
+        StatusText = "Analyzing image manually...";
 
-        // Ensure we are subscribed to defects detected by AI tools
-        aiService.DefectsDetected -= OnDefectsDetected;
-        aiService.DefectsDetected += OnDefectsDetected;
-        
         try
         {
-            if (string.IsNullOrWhiteSpace(UserQuestion))
+            var roi = new Domain.Rectangle(RoiX, RoiY, RoiWidth, RoiHeight);
+            var detectedDefects = imageProcessor.DetectDefects(OriginalImage, roi);
+            
+            Defects.Clear();
+            foreach (var defect in detectedDefects)
             {
-                var roi = new Domain.Rectangle(RoiX, RoiY, RoiWidth, RoiHeight);
-                var detectedDefects = imageProcessor.DetectDefects(OriginalImage, roi);
-                
-                Defects.Clear();
-                foreach (var defect in detectedDefects)
-                {
-                    Defects.Add(defect);
-                }
+                Defects.Add(defect);
+            }
 
-                var resultImageBytes = imageProcessor.GenerateResultImage(OriginalImage, detectedDefects);
-                UpdateDisplayImage(resultImageBytes);
-                
-                AnalysisSummary = await aiService.AnalyzeImageAsync(OriginalImage, detectedDefects);
-                StatusText = $"Analysis complete. {Defects.Count} defects found.";
-            }
-            else
-            {
-                AnalysisSummary = await aiService.AskQuestionAboutImageAsync(OriginalImage, UserQuestion);
-                StatusText = "AI Response received.";
-            }
+            var resultImageBytes = imageProcessor.GenerateResultImage(OriginalImage, detectedDefects);
+            UpdateDisplayImage(resultImageBytes);
+            
+            //AnalysisSummary = await aiService.AnalyzeImageAsync(OriginalImage, detectedDefects);
+            //ChatHistory.Add(new ChatMessage(AnalysisSummary, MessageSender.AI, DateTime.Now));
+            StatusText = $"Analysis complete. {Defects.Count} defects found.";
         }
         catch (Exception ex)
         {
             StatusText = $"Error: {ex.Message}";
             AnalysisSummary = $"An error occurred: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private void Ask()
+    {
+        UserQuestion = string.Empty;
+        StatusText = "Please input your question and press Enter.";
+    }
+
+    [RelayCommand]
+    private async Task SendQuestion()
+    {
+        if (OriginalImage == null || string.IsNullOrWhiteSpace(UserQuestion)) return;
+        
+        var question = UserQuestion;
+        ChatHistory.Add(new ChatMessage(question, MessageSender.User, DateTime.Now));
+        IsBusy = true;
+        StatusText = "Sending question to AI...";
+        UserQuestion = string.Empty;
+        try
+        {
+            string response;
+            if (UseImageInChat)
+            {
+                response = await aiService.AskQuestionAboutImageAsync(OriginalImage, question);
+            }
+            else
+            {
+                response = await aiService.AskQuestionAsync(question);
+            }
+            
+            AnalysisSummary = response;
+            ChatHistory.Add(new ChatMessage(response, MessageSender.AI, DateTime.Now));
+            StatusText = "AI Response received.";
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"Error: {ex.Message}";
+            AnalysisSummary = $"An error occurred: {ex.Message}";
+            ChatHistory.Add(new ChatMessage($"Error: {ex.Message}", MessageSender.AI, DateTime.Now));
         }
         finally
         {

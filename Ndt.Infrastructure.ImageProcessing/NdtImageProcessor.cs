@@ -118,7 +118,7 @@ public class NdtImageProcessor : IImageProcessor
                 defect.BoundingRect.Height
             );
             
-            Cv2.Rectangle(result, rect, Scalar.Red, 2);
+            Cv2.Rectangle(result, rect, Scalar.Blue, 2);
             Cv2.PutText(result, $"ID:{defect.Id} Area:{defect.Area:F1}", 
                 new OpenCvSharp.Point(rect.X, rect.Y - 5), 
                 HersheyFonts.HersheySimplex, 0.5, Scalar.Yellow, 1);

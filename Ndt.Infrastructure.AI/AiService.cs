@@ -5,6 +5,7 @@ using Microsoft.SemanticKernel.Connectors.Google;
 using Ndt.Domain;
 using Ndt.Infrastructure.AI.Plugins; 
 using Microsoft.SemanticKernel.ChatCompletion;
+using Microsoft.SemanticKernel.Planning.Handlebars;
 
 namespace Ndt.Infrastructure.AI;
 
@@ -14,6 +15,7 @@ public class AiService  : IAiAnalysisService
     
     private readonly Kernel _kernel;
     private readonly NdtVisionPlugin _visionPlugin;
+    private ChatHistory? _chatHistory;
 
     public AiService(Kernel kernel, IImageProcessor imageProcessor)
     {
@@ -25,6 +27,7 @@ public class AiService  : IAiAnalysisService
         _kernel.Plugins.AddFromObject(_visionPlugin, "WeldVision");
         _kernel.Plugins.AddFromType<NdtStandardsPlugin>("StandardsProvider");
     }
+    
     public async Task<string> AskQuestionAboutImageAsync(byte[] image, string userQuestion)
     {
         // 1. Update the plugin with the latest image from the UI
@@ -38,14 +41,56 @@ public class AiService  : IAiAnalysisService
             ToolCallBehavior = GeminiToolCallBehavior.AutoInvokeKernelFunctions
         };
 
-        var history = new ChatHistory("You are a helpful NDT assistant. Use your tools to analyze images and standards.");
-        history.AddUserMessage(userQuestion);
+        if (_chatHistory == null)
+        {
+            // 1. Load the prompt from Embedded Resources
+            var assembly = Assembly.GetExecutingAssembly();
+            using var stream = assembly.GetManifestResourceStream("Ndt.Infrastructure.AI.Prompts.WeldAnalysis.skprompt.txt");
+            using var reader = new StreamReader(stream!);
+            var promptTemplate = await reader.ReadToEndAsync();
+            
+            _chatHistory = new ChatHistory(promptTemplate);
+        }
+
+        _chatHistory.AddUserMessage(userQuestion);
 
         // 3. The AI will call DetectDefects() and CheckSafetyThreshold() automatically if needed
-        var result = await chat.GetChatMessageContentAsync(history, settings, _kernel);
+        var result = await chat.GetChatMessageContentAsync(_chatHistory, settings, _kernel);
+        
+        // Add the AI's response to history to maintain context
+        _chatHistory.Add(result);
         
         return result.ToString();
     }
+
+    public async Task<string> AskQuestionAsync(string userQuestion)
+    {
+        var chat = _kernel.GetRequiredService<IChatCompletionService>();
+        
+        var settings = new GeminiPromptExecutionSettings 
+        { 
+            ToolCallBehavior = GeminiToolCallBehavior.AutoInvokeKernelFunctions
+        };
+
+        if (_chatHistory == null)
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            using var stream = assembly.GetManifestResourceStream("Ndt.Infrastructure.AI.Prompts.WeldAnalysis.skprompt.txt");
+            using var reader = new StreamReader(stream!);
+            var promptTemplate = await reader.ReadToEndAsync();
+            
+            _chatHistory = new ChatHistory(promptTemplate);
+        }
+
+        _chatHistory.AddUserMessage(userQuestion);
+
+        var result = await chat.GetChatMessageContentAsync(_chatHistory, settings, _kernel);
+        
+        _chatHistory.Add(result);
+        
+        return result.ToString();
+    }
+    
     public async Task<string> AnalyzeImageAsync(byte[] image, List<Defect> defects)
     {
         // 1. Load the prompt from Embedded Resources
