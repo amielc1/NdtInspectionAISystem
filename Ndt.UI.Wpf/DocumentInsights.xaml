@@ -66,7 +66,7 @@
                                 <StackPanel HorizontalAlignment="Center">
                                     <TextBlock Text="📄" FontSize="40" HorizontalAlignment="Center" Margin="0,0,0,10"/>
                                     <TextBlock Text="Drag &amp; Drop or Browse" Foreground="#CCCCCC" HorizontalAlignment="Center"/>
-                                    <TextBlock Text=".txt files supported" FontSize="10" Foreground="#888888" HorizontalAlignment="Center" Margin="0,5,0,0"/>
+                                    <TextBlock Text=".txt, .pdf files supported" FontSize="10" Foreground="#888888" HorizontalAlignment="Center" Margin="0,5,0,0"/>
                                 </StackPanel>
                             </Button>
                         </Grid>

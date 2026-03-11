@@ -3,6 +3,8 @@ using CommunityToolkit.Mvvm.Input;
 using Ndt.Domain;
 using System.IO;
 using Microsoft.Win32;
+using UglyToad.PdfPig;
+using System.Text;
 
 namespace Ndt.UI.Wpf.ViewModels;
 
@@ -35,15 +37,26 @@ public partial class DocumentInsightsViewModel : ObservableObject
     {
         var openFileDialog = new OpenFileDialog
         {
-            Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*"
+            Filter = "Document files (*.txt, *.pdf)|*.txt;*.pdf|Text files (*.txt)|*.txt|PDF files (*.pdf)|*.pdf|All files (*.*)|*.*"
         };
 
         if (openFileDialog.ShowDialog() == true)
         {
             try
             {
-                DocumentContent = await File.ReadAllTextAsync(openFileDialog.FileName);
-                StatusMessage = $"Loaded: {Path.GetFileName(openFileDialog.FileName)}";
+                var filePath = openFileDialog.FileName;
+                var extension = Path.GetExtension(filePath).ToLowerInvariant();
+
+                if (extension == ".pdf")
+                {
+                    DocumentContent = await Task.Run(() => ExtractTextFromPdf(filePath));
+                }
+                else
+                {
+                    DocumentContent = await File.ReadAllTextAsync(filePath);
+                }
+
+                StatusMessage = $"Loaded: {Path.GetFileName(filePath)}";
                 InsightResult = string.Empty;
             }
             catch (Exception ex)
@@ -51,6 +64,19 @@ public partial class DocumentInsightsViewModel : ObservableObject
                 StatusMessage = $"Error loading document: {ex.Message}";
             }
         }
+    }
+
+    private string ExtractTextFromPdf(string filePath)
+    {
+        var sb = new StringBuilder();
+        using (var document = PdfDocument.Open(filePath))
+        {
+            foreach (var page in document.GetPages())
+            {
+                sb.AppendLine(page.Text);
+            }
+        }
+        return sb.ToString();
     }
 
     [RelayCommand]

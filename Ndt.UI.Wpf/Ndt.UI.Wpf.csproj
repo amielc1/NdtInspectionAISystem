@@ -21,6 +21,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.2" />
     <PackageReference Include="Microsoft.SemanticKernel" Version="1.72.0" />
     <PackageReference Include="Microsoft.SemanticKernel.Connectors.Google" Version="1.72.0-alpha" />
+    <PackageReference Include="PdfPig" Version="0.1.9" />
   </ItemGroup>
 
   <PropertyGroup>
