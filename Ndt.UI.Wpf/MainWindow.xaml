@@ -7,7 +7,7 @@
         xmlns:vm="clr-namespace:Ndt.UI.Wpf.ViewModels"
         d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
         mc:Ignorable="d"
-        Title="NDT Inspection System" Height="800" Width="1200">
+        Title="NDT Inspection System" Height="800" Width="1200" >
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
     </Window.Resources>
@@ -17,176 +17,186 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="400"/>
-        </Grid.ColumnDefinitions>
 
         <!-- Top Toolbar -->
-        <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,0,0,10">
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
             <Button Content="Load Image" Command="{Binding LoadImageCommand}" Padding="10,5" Margin="0,0,5,0"/>
             <Button Content="Linear Stretch" Command="{Binding ApplyLinearStretchCommand}" Padding="10,5" Margin="0,0,5,0"/>
             <Button Content="Equalized Stretch" Command="{Binding ApplyEqualizedStretchCommand}" Padding="10,5" Margin="0,0,5,0"/>
         </StackPanel>
 
-        <!-- Left Column: Vision -->
-        <Grid Grid.Row="1" Grid.Column="0" Margin="0,0,10,0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="200"/>
-            </Grid.RowDefinitions>
+        <TabControl Grid.Row="1">
+            <TabItem Header="Weld Vision">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="400"/>
+                    </Grid.ColumnDefinitions>
 
-            <Border Grid.Row="0" BorderBrush="Gray" BorderThickness="1" Background="Black">
-                <Canvas x:Name="ImageCanvas"
-                        Background="Transparent"
-                        MouseDown="OnImageMouseDown"
-                        MouseMove="OnImageMouseMove"
-                        MouseUp="OnImageMouseUp"
-                        ClipToBounds="True">
-                    <Image x:Name="MainImage"
-                           Source="{Binding DisplayImage}"
-                           Stretch="Uniform"
-                           Width="{Binding ActualWidth, ElementName=ImageCanvas}"
-                           Height="{Binding ActualHeight, ElementName=ImageCanvas}" />
-                    <Rectangle x:Name="RoiRectangle"
-                               Stroke="Red"
-                               StrokeThickness="2"
-                               Visibility="Collapsed" />
-                </Canvas>
-            </Border>
+                    <!-- Left Column: Vision -->
+                    <Grid Grid.Column="0" Margin="0,10,10,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="200"/>
+                        </Grid.RowDefinitions>
 
-            <GroupBox Grid.Row="1" Header="Detected Defects" Margin="0,10,0,0">
-                <DataGrid ItemsSource="{Binding Defects}" AutoGenerateColumns="False" IsReadOnly="True">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="Auto"/>
-                        <DataGridTextColumn Header="Area" Binding="{Binding Area, StringFormat={}{0:F1}}" Width="*"/>
-                        <DataGridTextColumn Header="Position" Binding="{Binding CenterPoint}" Width="*"/>
-                    </DataGrid.Columns>
-                </DataGrid>
-            </GroupBox>
-        </Grid>
+                        <Border Grid.Row="0" BorderBrush="Gray" BorderThickness="1" Background="Black">
+                            <Canvas x:Name="ImageCanvas"
+                                    Background="Transparent"
+                                    MouseDown="OnImageMouseDown"
+                                    MouseMove="OnImageMouseMove"
+                                    MouseUp="OnImageMouseUp"
+                                    ClipToBounds="True">
+                                <Image x:Name="MainImage"
+                                       Source="{Binding DisplayImage}"
+                                       Stretch="Uniform"
+                                       Width="{Binding ActualWidth, ElementName=ImageCanvas}"
+                                       Height="{Binding ActualHeight, ElementName=ImageCanvas}" />
+                                <Rectangle x:Name="RoiRectangle"
+                                           Stroke="Red"
+                                           StrokeThickness="2"
+                                           Visibility="Collapsed" />
+                            </Canvas>
+                        </Border>
 
-        <!-- Right Column: AI Chat/Analysis -->
-        <Grid Grid.Row="1" Grid.Column="1">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
+                        <GroupBox Grid.Row="1" Header="Detected Defects" Margin="0,10,0,0">
+                            <DataGrid ItemsSource="{Binding Defects}" AutoGenerateColumns="False" IsReadOnly="True">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="Auto"/>
+                                    <DataGridTextColumn Header="Area" Binding="{Binding Area, StringFormat={}{0:F1}}" Width="*"/>
+                                    <DataGridTextColumn Header="Position" Binding="{Binding CenterPoint}" Width="*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </GroupBox>
+                    </Grid>
 
-            <GroupBox Header="AI Analysis/Chat" Grid.Row="0">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <ItemsControl ItemsSource="{Binding ChatHistory}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border Margin="5" Padding="8" CornerRadius="5">
-                                    <Border.Style>
-                                        <Style TargetType="Border">
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding Sender}" Value="User">
-                                                    <Setter Property="Background" Value="#2D2D2D"/>
-                                                    <Setter Property="HorizontalAlignment" Value="Right"/>
-                                                    <Setter Property="Margin" Value="40,5,5,5"/>
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding Sender}" Value="AI">
-                                                    <Setter Property="Background" Value="#3E3E3E"/>
-                                                    <Setter Property="HorizontalAlignment" Value="Left"/>
-                                                    <Setter Property="Margin" Value="5,5,40,5"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Border.Style>
-                                    <StackPanel>
-                                        <TextBlock Text="{Binding Sender}" 
-                                                   FontSize="10" 
-                                                   Foreground="Gray" 
-                                                   Margin="0,0,0,4"/>
-                                        <TextBox Text="{Binding Content, Mode=OneWay}" 
-                                                 TextWrapping="Wrap" 
-                                                 FontSize="14" 
-                                                 Foreground="LightGray" 
-                                                 IsReadOnly="True" 
-                                                 Background="Transparent" 
-                                                 BorderThickness="0" 
-                                                 Padding="0"
-                                                 VerticalScrollBarVisibility="Disabled"/>
-                                        <TextBlock Text="{Binding Timestamp, StringFormat=t}" 
-                                                   FontSize="10" 
-                                                   Foreground="Gray" 
-                                                   HorizontalAlignment="Right" 
-                                                   Margin="0,4,0,0"/>
-                                    </StackPanel>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ScrollViewer>
-            </GroupBox>
+                    <!-- Right Column: AI Chat/Analysis -->
+                    <Grid Grid.Column="1" Margin="0,10,0,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
 
-            <TextBox Grid.Row="1" 
-                     x:Name="QuestionTextBox"
-                     Text="{Binding UserQuestion, UpdateSourceTrigger=PropertyChanged}"
-                     Margin="0,10,0,0" 
-                     Padding="5" 
-                     Height="60" 
-                     TextWrapping="Wrap" 
-                     AcceptsReturn="False"
-                     VerticalContentAlignment="Top">
-                <TextBox.InputBindings>
-                    <KeyBinding Key="Enter" Command="{Binding SendQuestionCommand}"/>
-                </TextBox.InputBindings>
-                <TextBox.Style>
-                    <Style TargetType="TextBox">
-                        <Style.Triggers>
-                            <Trigger Property="Text" Value="">
-                                <Setter Property="Background">
-                                    <Setter.Value>
-                                        <VisualBrush Stretch="None">
-                                            <VisualBrush.Visual>
-                                                <TextBlock Text="Ask about the weld..." Foreground="Gray" FontStyle="Italic"/>
-                                            </VisualBrush.Visual>
-                                        </VisualBrush>
-                                    </Setter.Value>
-                                </Setter>
-                            </Trigger>
-                            <Trigger Property="IsFocused" Value="True">
-                                <Setter Property="Background" Value="White"/>
-                            </Trigger>
-                        </Style.Triggers>
-                    </Style>
-                </TextBox.Style>
-            </TextBox>
+                        <GroupBox Header="AI Analysis/Chat" Grid.Row="0">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding ChatHistory}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Margin="5" Padding="8" CornerRadius="5">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Sender}" Value="User">
+                                                                <Setter Property="Background" Value="#2D2D2D"/>
+                                                                <Setter Property="HorizontalAlignment" Value="Right"/>
+                                                                <Setter Property="Margin" Value="40,5,5,5"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Sender}" Value="AI">
+                                                                <Setter Property="Background" Value="#3E3E3E"/>
+                                                                <Setter Property="HorizontalAlignment" Value="Left"/>
+                                                                <Setter Property="Margin" Value="5,5,40,5"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Sender}" 
+                                                               FontSize="10" 
+                                                               Foreground="Gray" 
+                                                               Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding Content, Mode=OneWay}" 
+                                                             TextWrapping="Wrap" 
+                                                             FontSize="14" 
+                                                             Foreground="LightGray" 
+                                                             IsReadOnly="True" 
+                                                             Background="Transparent" 
+                                                             BorderThickness="0" 
+                                                             Padding="0"
+                                                             VerticalScrollBarVisibility="Disabled"/>
+                                                    <TextBlock Text="{Binding Timestamp, StringFormat=t}" 
+                                                               FontSize="10" 
+                                                               Foreground="Gray" 
+                                                               HorizontalAlignment="Right" 
+                                                               Margin="0,4,0,0"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </GroupBox>
 
-            <UniformGrid Grid.Row="2" Columns="2" Margin="0,5,0,0">
-                <StackPanel Orientation="Vertical">
-                    <CheckBox Content="Send with image" IsChecked="{Binding UseImageInChat}" Margin="0,5,0,5"/>
-                    <UniformGrid Columns="2">
-                        <Button Content="Manual" 
-                                Command="{Binding AnalyzeManualCommand}" 
-                                Padding="10,10"
-                                Margin="0,0,2,0"
-                                FontWeight="Bold"/>
-                        <Button Content="AI Scan" 
-                                Command="{Binding AnalyzeWithAiCommand}" 
-                                Padding="10,10"
-                                Margin="2,0,2,0"
-                                Background="DarkSlateBlue"
-                                Foreground="White"
-                                FontWeight="Bold"/>
-                    </UniformGrid>
-                </StackPanel>
-                <Button Content="Ask" 
-                        Click="OnAskButtonClick"
-                        Command="{Binding AskCommand}" 
-                        Padding="10,10"
-                        Margin="2,0,0,0"
-                        VerticalAlignment="Bottom"
-                        FontWeight="Bold"/>
-            </UniformGrid>
-        </Grid>
+                        <TextBox Grid.Row="1" 
+                                 x:Name="QuestionTextBox"
+                                 Text="{Binding UserQuestion, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,10,0,0" 
+                                 Padding="5" 
+                                 Height="60" 
+                                 TextWrapping="Wrap" 
+                                 AcceptsReturn="False"
+                                 VerticalContentAlignment="Top">
+                            <TextBox.InputBindings>
+                                <KeyBinding Key="Enter" Command="{Binding SendQuestionCommand}"/>
+                            </TextBox.InputBindings>
+                            <TextBox.Style>
+                                <Style TargetType="TextBox">
+                                    <Style.Triggers>
+                                        <Trigger Property="Text" Value="">
+                                            <Setter Property="Background">
+                                                <Setter.Value>
+                                                    <VisualBrush Stretch="None">
+                                                        <VisualBrush.Visual>
+                                                            <TextBlock Text="Ask about the weld..." Foreground="Gray" FontStyle="Italic"/>
+                                                        </VisualBrush.Visual>
+                                                    </VisualBrush>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Trigger>
+                                        <Trigger Property="IsFocused" Value="True">
+                                            <Setter Property="Background" Value="White"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
+
+                        <UniformGrid Grid.Row="2" Columns="2" Margin="0,5,0,0">
+                            <StackPanel Orientation="Vertical">
+                                <CheckBox Content="Send with image" IsChecked="{Binding UseImageInChat}" Margin="0,5,0,5"/>
+                                <UniformGrid Columns="2">
+                                    <Button Content="Manual" 
+                                            Command="{Binding AnalyzeManualCommand}" 
+                                            Padding="10,10"
+                                            Margin="0,0,2,0"
+                                            FontWeight="Bold"/>
+                                    <Button Content="AI Scan" 
+                                            Command="{Binding AnalyzeWithAiCommand}" 
+                                            Padding="10,10"
+                                            Margin="2,0,2,0"
+                                            Background="DarkSlateBlue"
+                                            Foreground="White"
+                                            FontWeight="Bold"/>
+                                </UniformGrid>
+                            </StackPanel>
+                            <Button Content="Ask" 
+                                    Click="OnAskButtonClick"
+                                    Command="{Binding AskCommand}" 
+                                    Padding="10,10"
+                                    Margin="2,0,0,0"
+                                    VerticalAlignment="Bottom"
+                                    FontWeight="Bold"/>
+                        </UniformGrid>
+                    </Grid>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Document Insights">
+                <local:DocumentInsights DataContext="{Binding DocumentInsightsViewModel}"/>
+            </TabItem>
+        </TabControl>
 
         <!-- Footer -->
-        <StatusBar Grid.Row="2" Grid.ColumnSpan="2">
+        <StatusBar Grid.Row="2">
             <StatusBarItem>
                 <StackPanel Orientation="Horizontal">
                     <ProgressBar IsIndeterminate="True" 

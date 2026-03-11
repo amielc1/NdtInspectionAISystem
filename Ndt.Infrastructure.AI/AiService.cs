@@ -7,6 +7,7 @@ using Ndt.Infrastructure.AI.Plugins;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.PromptTemplates.Handlebars;
 using Microsoft.SemanticKernel.Planning.Handlebars;
+using Microsoft.SemanticKernel.Plugins.Core;
 
 namespace Ndt.Infrastructure.AI;
 
@@ -30,6 +31,7 @@ public class AiService  : IAiAnalysisService
         _kernel.Plugins.AddFromObject(_visionPlugin, "WeldVision");
         _kernel.Plugins.AddFromType<NdtStandardsPlugin>("StandardsProvider");
         _kernel.Plugins.AddFromType<NdtReportingPlugin>("ReportingProvider");
+        _kernel.Plugins.AddFromType<ConversationSummaryPlugin>("ConversationSummaryPlugin");
     }
     
     private async Task InitializeChatHistoryAsync()
@@ -243,6 +245,25 @@ public class AiService  : IAiAnalysisService
         
         // Final invoke using the fully rendered prompt
         var result = await _kernel.InvokePromptAsync(renderedPrompt, arguments);
+        return result.ToString();
+    }
+
+    public async Task<string> GetDocumentInsightAsync(string documentText, string insightType)
+    {
+        string functionName = insightType switch
+        {
+            "Summary" => "SummarizeConversation",
+            "ActionItems" => "GetConversationActionItems",
+            "Topics" => "GetConversationTopics",
+            _ => throw new ArgumentException($"Invalid insight type: {insightType}", nameof(insightType))
+        };
+
+        var arguments = new KernelArguments
+        {
+            ["input"] = documentText
+        };
+
+        var result = await _kernel.InvokeAsync("ConversationSummaryPlugin", functionName, arguments);
         return result.ToString();
     }
 }

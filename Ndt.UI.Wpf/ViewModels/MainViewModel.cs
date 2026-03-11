@@ -9,10 +9,11 @@ namespace Ndt.UI.Wpf.ViewModels;
 
 public partial class MainViewModel : ObservableObject
 {
-    public MainViewModel(IImageProcessor imageProcessor, IAiAnalysisService aiService)
+    public MainViewModel(IImageProcessor imageProcessor, IAiAnalysisService aiService, DocumentInsightsViewModel documentInsightsViewModel)
     {
         this.imageProcessor = imageProcessor;
         this.aiService = aiService;
+        this.DocumentInsightsViewModel = documentInsightsViewModel;
         
         // Subscribe to AI-triggered defect detection
         aiService.DefectsDetected += OnDefectsDetected;
@@ -27,6 +28,9 @@ public partial class MainViewModel : ObservableObject
 
     private readonly IImageProcessor imageProcessor;
     private readonly IAiAnalysisService aiService;
+
+    public DocumentInsightsViewModel DocumentInsightsViewModel { get; }
+
     [ObservableProperty]
     private byte[]? _originalImage;
 

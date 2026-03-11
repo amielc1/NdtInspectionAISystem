@@ -47,6 +47,7 @@ namespace Ndt.UI.Wpf
 
             // ViewModels
             services.AddTransient<MainViewModel>();
+            services.AddTransient<DocumentInsightsViewModel>();
 
             // Views
             services.AddTransient<MainWindow>(s => new MainWindow
