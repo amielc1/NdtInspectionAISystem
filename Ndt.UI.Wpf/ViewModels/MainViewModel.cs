@@ -124,7 +124,8 @@ public partial class MainViewModel : ObservableObject
         try
         {
             // For now, hardcode "Steel" as material
-            var response = await aiService.AnalyzeWithHandlebarsAsync(OriginalImage, "Steel");
+            var roi = new Domain.Rectangle(RoiX, RoiY, RoiWidth, RoiHeight);
+            var response = await aiService.AnalyzeWithHandlebarsAsync(OriginalImage, "Steel", roi);
             
             AnalysisSummary = response;
             ChatHistory.Add(new ChatMessage(response, MessageSender.AI, DateTime.Now));
@@ -202,11 +203,13 @@ public partial class MainViewModel : ObservableObject
             if (question.StartsWith("/manual"))
             {
                 // Demonstration of manual tool calling behavior
-                response = await aiService.AskQuestionWithManualToolCallAsync(question.Substring(7).Trim());
+                var roi = new Domain.Rectangle(RoiX, RoiY, RoiWidth, RoiHeight);
+                response = await aiService.AskQuestionWithManualToolCallAsync(question.Substring(7).Trim(), roi);
             }
             else if (UseImageInChat)
             {
-                response = await aiService.AskQuestionAboutImageAsync(OriginalImage, question);
+                var roi = new Domain.Rectangle(RoiX, RoiY, RoiWidth, RoiHeight);
+                response = await aiService.AskQuestionAboutImageAsync(OriginalImage, question, roi);
             }
             else
             {

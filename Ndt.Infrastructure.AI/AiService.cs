@@ -54,10 +54,21 @@ public class AiService  : IAiAnalysisService
         _chatHistory.AddSystemMessage(renderedPrompt);
     }
 
-    public async Task<string> AskQuestionAboutImageAsync(byte[] image, string userQuestion)
+    public async Task<string> AskQuestionAboutImageAsync(byte[] image, string userQuestion, Rectangle? roi = null)
     {
-        // 1. Update the plugin with the latest image from the UI
+        // 1. Update the plugin with the latest image and ROI from the UI
         _visionPlugin.CurrentImage = image;
+        if (roi != null)
+        {
+            _visionPlugin.RoiX = roi.X;
+            _visionPlugin.RoiY = roi.Y;
+            _visionPlugin.RoiWidth = roi.Width;
+            _visionPlugin.RoiHeight = roi.Height;
+        }
+        else
+        {
+            _visionPlugin.RoiX = _visionPlugin.RoiY = _visionPlugin.RoiWidth = _visionPlugin.RoiHeight = 0;
+        }
 
         var chat = _kernel.GetRequiredService<IChatCompletionService>();
         
@@ -100,8 +111,21 @@ public class AiService  : IAiAnalysisService
         return result.ToString();
     }
 
-    public async Task<string> AskQuestionWithManualToolCallAsync(string userQuestion)
+    public async Task<string> AskQuestionWithManualToolCallAsync(string userQuestion, Rectangle? roi = null)
     {
+        // Although not using CurrentImage directly here, we should ensure ROI is consistent if tool is called
+        if (roi != null)
+        {
+            _visionPlugin.RoiX = roi.X;
+            _visionPlugin.RoiY = roi.Y;
+            _visionPlugin.RoiWidth = roi.Width;
+            _visionPlugin.RoiHeight = roi.Height;
+        }
+        else
+        {
+            _visionPlugin.RoiX = _visionPlugin.RoiY = _visionPlugin.RoiWidth = _visionPlugin.RoiHeight = 0;
+        }
+
         var chat = _kernel.GetRequiredService<IChatCompletionService>();
         
         var settings = new GeminiPromptExecutionSettings 
@@ -161,10 +185,21 @@ public class AiService  : IAiAnalysisService
         return result.ToString();
     }
 
-    public async Task<string> AnalyzeWithHandlebarsAsync(byte[] image, string material)
+    public async Task<string> AnalyzeWithHandlebarsAsync(byte[] image, string material, Rectangle? roi = null)
     {
-        // 1. Set the image in the plugin context
+        // 1. Set the image and ROI in the plugin context
         _visionPlugin.CurrentImage = image;
+        if (roi != null)
+        {
+            _visionPlugin.RoiX = roi.X;
+            _visionPlugin.RoiY = roi.Y;
+            _visionPlugin.RoiWidth = roi.Width;
+            _visionPlugin.RoiHeight = roi.Height;
+        }
+        else
+        {
+            _visionPlugin.RoiX = _visionPlugin.RoiY = _visionPlugin.RoiWidth = _visionPlugin.RoiHeight = 0;
+        }
 
         // 2. Load the Handlebars template
         var assembly = Assembly.GetExecutingAssembly();
@@ -183,8 +218,16 @@ public class AiService  : IAiAnalysisService
         //     config, factory
         // );
 
-        // 3. Invoke with parameters
-        var arguments = new KernelArguments()
+        _kernel.FunctionInvocationFilters.Add(new HumanApprovalFilter(AskUserForConfirmation));
+
+        // 3. Setup tool calling settings
+        var settings = new GeminiPromptExecutionSettings 
+        { 
+            FunctionChoiceBehavior = FunctionChoiceBehavior.Auto() 
+        };
+
+        // 4. Invoke with parameters
+        var arguments = new KernelArguments(settings)
         {
             ["material"] = material
         };

@@ -11,4 +11,7 @@ Instructions:
 If there are multiple critical defects, recommend 'X-Ray Rescan'.
 If all are acceptable, recommend 'Proceed to Coating'.
 
-Format the final output in Markdown with a 'Status' header.
+Finally, use the 'SubmitDefectReport' function from the 'ReportingProvider' plugin to officially submit the findings to the database.
+
+Always provide the final response in professional Markdown with a 'Status' header.
+If no defects are found after calling 'DetectDefects', still call 'SubmitDefectReport' with a clear 'PASS' status.

@@ -101,10 +101,15 @@
                                                    FontSize="10" 
                                                    Foreground="Gray" 
                                                    Margin="0,0,0,4"/>
-                                        <TextBlock Text="{Binding Content}" 
-                                                   TextWrapping="Wrap" 
-                                                   FontSize="14" 
-                                                   Foreground="LightGray"/>
+                                        <TextBox Text="{Binding Content, Mode=OneWay}" 
+                                                 TextWrapping="Wrap" 
+                                                 FontSize="14" 
+                                                 Foreground="LightGray" 
+                                                 IsReadOnly="True" 
+                                                 Background="Transparent" 
+                                                 BorderThickness="0" 
+                                                 Padding="0"
+                                                 VerticalScrollBarVisibility="Disabled"/>
                                         <TextBlock Text="{Binding Timestamp, StringFormat=t}" 
                                                    FontSize="10" 
                                                    Foreground="Gray" 
@@ -164,7 +169,7 @@
                         <Button Content="AI Scan" 
                                 Command="{Binding AnalyzeWithAiCommand}" 
                                 Padding="10,10"
-                                Margin="2,0,0,0"
+                                Margin="2,0,2,0"
                                 Background="DarkSlateBlue"
                                 Foreground="White"
                                 FontWeight="Bold"/>
@@ -174,6 +179,8 @@
                         Click="OnAskButtonClick"
                         Command="{Binding AskCommand}" 
                         Padding="10,10"
+                        Margin="2,0,0,0"
+                        VerticalAlignment="Bottom"
                         FontWeight="Bold"/>
             </UniformGrid>
         </Grid>

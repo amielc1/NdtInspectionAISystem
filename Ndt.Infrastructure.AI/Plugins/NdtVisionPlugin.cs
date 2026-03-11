@@ -12,15 +12,20 @@ public class NdtVisionPlugin(IImageProcessor imageProcessor)
     // We store the current image in the plugin's state or pass it via context
     public byte[]? CurrentImage { get; set; }
 
+    public int RoiX { get; set; } = 0;
+    public int RoiY { get; set; } = 0;
+    public int RoiWidth { get; set; } = 0;
+    public int RoiHeight { get; set; } = 0;
+
     [KernelFunction]
     [Description("Runs an OpenCV analysis on the current weld image to detect defects like porosity or cracks.")]
     public List<Defect> DetectDefects()
     {
         if (CurrentImage == null) return new List<Defect>();
         
-        // We use a default ROI (the whole image) for the AI-triggered scan
-        var fullRoi = new Rectangle(0, 0, 0, 0); // Logic inside processor handles '0' as full
-        var defects = imageProcessor.DetectDefects(CurrentImage, fullRoi);
+        // We use the ROI set by the user or default (0,0,0,0) for the AI-triggered scan
+        var roi = new Rectangle(RoiX, RoiY, RoiWidth, RoiHeight); 
+        var defects = imageProcessor.DetectDefects(CurrentImage, roi);
         
         DefectsDetected?.Invoke(defects);
         
