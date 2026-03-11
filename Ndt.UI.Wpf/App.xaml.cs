@@ -19,6 +19,7 @@ namespace Ndt.UI.Wpf
         {
             _configuration = new ConfigurationBuilder()
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .AddUserSecrets<App>()
                 .AddEnvironmentVariables()
                 .Build();
 
