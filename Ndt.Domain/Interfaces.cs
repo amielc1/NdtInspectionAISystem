@@ -10,8 +10,10 @@ public interface IImageProcessor
 public interface IAiAnalysisService
 {
     event Action<List<Defect>>? DefectsDetected;
+    Func<string, Task<bool>>? ToolCallConfirmationAsync { get; set; }
     Task<string> AnalyzeImageAsync(byte[] image, List<Defect> defects);
     Task<string> AskQuestionAboutImageAsync(byte[] image, string userQuestion);
     Task<string> AskQuestionAsync(string userQuestion);
+    Task<string> AskQuestionWithManualToolCallAsync(string userQuestion); // Demonstration of ToolCallBehavior.EnableKernelFunctions
     Task<string> AnalyzeWithHandlebarsAsync(byte[] image, string material);
 }

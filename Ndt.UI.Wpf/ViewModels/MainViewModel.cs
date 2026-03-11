@@ -16,6 +16,13 @@ public partial class MainViewModel : ObservableObject
         
         // Subscribe to AI-triggered defect detection
         aiService.DefectsDetected += OnDefectsDetected;
+
+        // Implementation of manual tool call confirmation
+        aiService.ToolCallConfirmationAsync = async (message) =>
+        {
+            return await App.Current.Dispatcher.InvokeAsync(() =>
+                System.Windows.MessageBox.Show(message, "Confirm AI Action", System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Question) == System.Windows.MessageBoxResult.Yes);
+        };
     }
 
     private readonly IImageProcessor imageProcessor;
@@ -192,7 +199,12 @@ public partial class MainViewModel : ObservableObject
         try
         {
             string response;
-            if (UseImageInChat)
+            if (question.StartsWith("/manual"))
+            {
+                // Demonstration of manual tool calling behavior
+                response = await aiService.AskQuestionWithManualToolCallAsync(question.Substring(7).Trim());
+            }
+            else if (UseImageInChat)
             {
                 response = await aiService.AskQuestionAboutImageAsync(OriginalImage, question);
             }

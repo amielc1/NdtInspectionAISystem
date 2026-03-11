@@ -18,6 +18,8 @@ public class AiService  : IAiAnalysisService
     private readonly NdtVisionPlugin _visionPlugin;
     private ChatHistory? _chatHistory;
 
+    public Func<string, Task<bool>>? ToolCallConfirmationAsync { get; set; }
+
     public AiService(Kernel kernel, IImageProcessor imageProcessor)
     {
         _kernel = kernel;
@@ -27,8 +29,31 @@ public class AiService  : IAiAnalysisService
         
         _kernel.Plugins.AddFromObject(_visionPlugin, "WeldVision");
         _kernel.Plugins.AddFromType<NdtStandardsPlugin>("StandardsProvider");
+        _kernel.Plugins.AddFromType<NdtReportingPlugin>("ReportingProvider");
     }
     
+    private async Task InitializeChatHistoryAsync()
+    {
+        if (_chatHistory != null) return;
+
+        var assembly = Assembly.GetExecutingAssembly();
+        using var stream = assembly.GetManifestResourceStream("Ndt.Infrastructure.AI.Prompts.WeldAnalysis.skprompt.txt");
+        using var reader = new StreamReader(stream!);
+        var promptTemplate = await reader.ReadToEndAsync();
+
+        // Render the template to resolve variables like {{$material}}
+        // If we don't render it, the AI sees raw template tags which prevents tool calling.
+        var factory = new KernelPromptTemplateFactory();
+        var template = factory.Create(new PromptTemplateConfig(promptTemplate));
+        var renderedPrompt = await template.RenderAsync(_kernel, new KernelArguments
+        {
+            ["material"] = "Steel"
+        });
+
+        _chatHistory = new ChatHistory();
+        _chatHistory.AddSystemMessage(renderedPrompt);
+    }
+
     public async Task<string> AskQuestionAboutImageAsync(byte[] image, string userQuestion)
     {
         // 1. Update the plugin with the latest image from the UI
@@ -42,18 +67,9 @@ public class AiService  : IAiAnalysisService
             ToolCallBehavior = GeminiToolCallBehavior.AutoInvokeKernelFunctions
         };
 
-        if (_chatHistory == null)
-        {
-            // 1. Load the prompt from Embedded Resources
-            var assembly = Assembly.GetExecutingAssembly();
-            using var stream = assembly.GetManifestResourceStream("Ndt.Infrastructure.AI.Prompts.WeldAnalysis.skprompt.txt");
-            using var reader = new StreamReader(stream!);
-            var promptTemplate = await reader.ReadToEndAsync();
-            
-            _chatHistory = new ChatHistory(promptTemplate);
-        }
+        await InitializeChatHistoryAsync();
 
-        _chatHistory.AddUserMessage(userQuestion);
+        _chatHistory!.AddUserMessage(userQuestion);
 
         // 3. The AI will call DetectDefects() and CheckSafetyThreshold() automatically if needed
         var result = await chat.GetChatMessageContentAsync(_chatHistory, settings, _kernel);
@@ -73,23 +89,46 @@ public class AiService  : IAiAnalysisService
             ToolCallBehavior = GeminiToolCallBehavior.AutoInvokeKernelFunctions
         };
 
-        if (_chatHistory == null)
-        {
-            var assembly = Assembly.GetExecutingAssembly();
-            using var stream = assembly.GetManifestResourceStream("Ndt.Infrastructure.AI.Prompts.WeldAnalysis.skprompt.txt");
-            using var reader = new StreamReader(stream!);
-            var promptTemplate = await reader.ReadToEndAsync();
-            
-            _chatHistory = new ChatHistory(promptTemplate);
-        }
+        await InitializeChatHistoryAsync();
 
-        _chatHistory.AddUserMessage(userQuestion);
+        _chatHistory!.AddUserMessage(userQuestion);
 
         var result = await chat.GetChatMessageContentAsync(_chatHistory, settings, _kernel);
         
         _chatHistory.Add(result);
         
         return result.ToString();
+    }
+
+    public async Task<string> AskQuestionWithManualToolCallAsync(string userQuestion)
+    {
+        var chat = _kernel.GetRequiredService<IChatCompletionService>();
+        
+        var settings = new GeminiPromptExecutionSettings 
+        { 
+            FunctionChoiceBehavior = FunctionChoiceBehavior.Auto() 
+        };
+
+        await InitializeChatHistoryAsync();
+
+        _chatHistory!.AddUserMessage(userQuestion);
+
+        // Register the new filter into the Kernel BEFORE making the chat request
+        _kernel.FunctionInvocationFilters.Add(new HumanApprovalFilter(AskUserForConfirmation));
+
+        var result = await chat.GetChatMessageContentAsync(_chatHistory, settings, _kernel);
+        
+        _chatHistory.Add(result);
+        return result.ToString();
+    }
+
+    private async Task<bool> AskUserForConfirmation(string message)
+    {
+        if (ToolCallConfirmationAsync != null)
+        {
+            return await ToolCallConfirmationAsync(message);
+        }
+        return true;
     }
     
     public async Task<string> AnalyzeImageAsync(byte[] image, List<Defect> defects)
