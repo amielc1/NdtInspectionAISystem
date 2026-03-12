@@ -35,6 +35,7 @@ namespace Ndt.UI.Wpf
             services.AddSingleton<IImageProcessor, NdtImageProcessor>();
         
             // AI Services
+            services.AddSingleton<IDocumentMemoryService, DocumentMemoryService>();
             services.AddSingleton<Kernel>(_ => 
             {
                 var apiKey = _configuration!["AiSettings:GEMINI_API_KEY"];

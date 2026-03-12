@@ -20,6 +20,8 @@
     <EmbeddedResource Include="Prompts\WeldAnalysis\skprompt.txt" />
     <None Remove="Prompts\WeldAnalysis\analysis.handlebars" />
     <EmbeddedResource Include="Prompts\WeldAnalysis\analysis.handlebars" />
+    <None Remove="Prompts\RAGPromptTemplate.txt" />
+    <EmbeddedResource Include="Prompts\RAGPromptTemplate.txt" />
   </ItemGroup>
 
   <PropertyGroup>

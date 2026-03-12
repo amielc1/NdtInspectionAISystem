@@ -17,6 +17,7 @@ public interface IAiAnalysisService
     Task<string> AskQuestionWithManualToolCallAsync(string userQuestion, Rectangle? roi = null); // Demonstration of ToolCallBehavior.EnableKernelFunctions
     Task<string> AnalyzeWithHandlebarsAsync(byte[] image, string material, Rectangle? roi = null);
     Task<string> GetDocumentInsightAsync(string documentText, string insightType);
+    Task<string> AskQuestionWithRagAsync(string userQuestion);
 }
 
 public interface IDocumentMemoryService

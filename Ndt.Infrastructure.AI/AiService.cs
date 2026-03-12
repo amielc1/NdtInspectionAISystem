@@ -16,14 +16,16 @@ public class AiService  : IAiAnalysisService
     public event Action<List<Defect>>? DefectsDetected;
     
     private readonly Kernel _kernel;
+    private readonly IDocumentMemoryService _memoryService;
     private readonly NdtVisionPlugin _visionPlugin;
     private ChatHistory? _chatHistory;
 
     public Func<string, Task<bool>>? ToolCallConfirmationAsync { get; set; }
 
-    public AiService(Kernel kernel, IImageProcessor imageProcessor)
+    public AiService(Kernel kernel, IImageProcessor imageProcessor, IDocumentMemoryService memoryService)
     {
         _kernel = kernel;
+        _memoryService = memoryService;
         // Manual instantiation of the plugin to keep a reference to the image state
         _visionPlugin = new NdtVisionPlugin(imageProcessor);
         _visionPlugin.DefectsDetected += defects => DefectsDetected?.Invoke(defects);
@@ -38,10 +40,7 @@ public class AiService  : IAiAnalysisService
     {
         if (_chatHistory != null) return;
 
-        var assembly = Assembly.GetExecutingAssembly();
-        using var stream = assembly.GetManifestResourceStream("Ndt.Infrastructure.AI.Prompts.WeldAnalysis.skprompt.txt");
-        using var reader = new StreamReader(stream!);
-        var promptTemplate = await reader.ReadToEndAsync();
+        var promptTemplate = await LoadEmbeddedPromptAsync("Ndt.Infrastructure.AI.Prompts.WeldAnalysis.skprompt.txt");
 
         // Render the template to resolve variables like {{$material}}
         // If we don't render it, the AI sees raw template tags which prevents tool calling.
@@ -160,10 +159,7 @@ public class AiService  : IAiAnalysisService
     public async Task<string> AnalyzeImageAsync(byte[] image, List<Defect> defects)
     {
         // 1. Load the prompt from Embedded Resources
-        var assembly = Assembly.GetExecutingAssembly();
-        using var stream = assembly.GetManifestResourceStream("Ndt.Infrastructure.AI.Prompts.WeldAnalysis.skprompt.txt");
-        using var reader = new StreamReader(stream!);
-        var promptTemplate = await reader.ReadToEndAsync();
+        var promptTemplate = await LoadEmbeddedPromptAsync("Ndt.Infrastructure.AI.Prompts.WeldAnalysis.skprompt.txt");
 
         // 2. Create the function from the loaded template
         var analysisFunction = _kernel.CreateFunctionFromPrompt(promptTemplate);
@@ -204,10 +200,7 @@ public class AiService  : IAiAnalysisService
         }
 
         // 2. Load the Handlebars template
-        var assembly = Assembly.GetExecutingAssembly();
-        using var stream = assembly.GetManifestResourceStream("Ndt.Infrastructure.AI.Prompts.WeldAnalysis.analysis.handlebars");
-        using var reader = new StreamReader(stream!);
-        var template = await reader.ReadToEndAsync();
+        var template = await LoadEmbeddedPromptAsync("Ndt.Infrastructure.AI.Prompts.WeldAnalysis.analysis.handlebars");
         var factory = new HandlebarsPromptTemplateFactory();
         var config = new PromptTemplateConfig()
         {
@@ -265,5 +258,40 @@ public class AiService  : IAiAnalysisService
 
         var result = await _kernel.InvokeAsync("ConversationSummaryPlugin", functionName, arguments);
         return result.ToString();
+    }
+
+    public async Task<string> AskQuestionWithRagAsync(string userQuestion)
+    {
+        // 1. Retrieve Context
+        var context = await _memoryService.SearchRelevantContextAsync("NDT_Docs", userQuestion);
+
+        // 2. Load the prompt from Embedded Resources
+        var promptTemplate = await LoadEmbeddedPromptAsync("Ndt.Infrastructure.AI.Prompts.RAGPromptTemplate.txt");
+
+        // 3. Create Function
+        var ragFunction = _kernel.CreateFunctionFromPrompt(promptTemplate);
+
+        // 4. Set Arguments
+        var arguments = new KernelArguments
+        {
+            ["context"] = context,
+            ["question"] = userQuestion
+        };
+
+        // 5. Invoke and Return
+        var result = await _kernel.InvokeAsync(ragFunction, arguments);
+        return result.ToString();
+    }
+
+    private async Task<string> LoadEmbeddedPromptAsync(string resourceName)
+    {
+        var assembly = Assembly.GetExecutingAssembly();
+        using var stream = assembly.GetManifestResourceStream(resourceName);
+        if (stream == null)
+        {
+            throw new InvalidOperationException($"Could not find embedded resource: {resourceName}");
+        }
+        using var reader = new StreamReader(stream);
+        return await reader.ReadToEndAsync();
     }
 }
