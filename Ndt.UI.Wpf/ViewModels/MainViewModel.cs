@@ -9,10 +9,11 @@ namespace Ndt.UI.Wpf.ViewModels;
 
 public partial class MainViewModel : ObservableObject
 {
-    public MainViewModel(IImageProcessor imageProcessor, IAiAnalysisService aiService, DocumentInsightsViewModel documentInsightsViewModel)
+    public MainViewModel(IImageProcessor imageProcessor, IAiAnalysisService aiService, IDocumentMemoryService memoryService, DocumentInsightsViewModel documentInsightsViewModel)
     {
         this.imageProcessor = imageProcessor;
         this.aiService = aiService;
+        this.memoryService = memoryService;
         this.DocumentInsightsViewModel = documentInsightsViewModel;
         
         // Subscribe to AI-triggered defect detection
@@ -28,6 +29,7 @@ public partial class MainViewModel : ObservableObject
 
     private readonly IImageProcessor imageProcessor;
     private readonly IAiAnalysisService aiService;
+    private readonly IDocumentMemoryService memoryService;
 
     public DocumentInsightsViewModel DocumentInsightsViewModel { get; }
 
@@ -54,6 +56,9 @@ public partial class MainViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _useImageInChat = true;
+
+    [ObservableProperty]
+    private bool _isRagMode;
 
     [ObservableProperty]
     private bool _isBusy;
@@ -182,19 +187,49 @@ public partial class MainViewModel : ObservableObject
         {
             IsBusy = false;
         }
-    }
+    } 
 
     [RelayCommand]
-    private void Ask()
+    private async Task LoadRagContent()
     {
-        UserQuestion = string.Empty;
-        StatusText = "Please input your question and press Enter.";
+        var openFileDialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*"
+        };
+
+        if (openFileDialog.ShowDialog() == true)
+        {
+            try
+            {
+                IsBusy = true;
+                StatusText = $"Importing {Path.GetFileName(openFileDialog.FileName)} to memory...";
+                var text = await File.ReadAllTextAsync(openFileDialog.FileName);
+                await memoryService.ImportDocumentAsync(text, "NDT_Docs");
+                IsRagMode = true;
+                StatusText = "Content imported and RAG mode enabled.";
+            }
+            catch (Exception ex)
+            {
+                StatusText = $"Error importing document: {ex.Message}";
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
     }
 
     [RelayCommand]
     private async Task SendQuestion()
     {
-        if (OriginalImage == null || string.IsNullOrWhiteSpace(UserQuestion)) return;
+        if (string.IsNullOrWhiteSpace(UserQuestion)) return;
+        
+        // RAG mode doesn't strictly need the original image, but other modes might.
+        if (!IsRagMode && OriginalImage == null)
+        {
+            StatusText = "Please load an image first.";
+            return;
+        }
         
         var question = UserQuestion;
         ChatHistory.Add(new ChatMessage(question, MessageSender.User, DateTime.Now));
@@ -204,7 +239,11 @@ public partial class MainViewModel : ObservableObject
         try
         {
             string response;
-            if (question.StartsWith("/manual"))
+            if (IsRagMode)
+            {
+                response = await aiService.AskQuestionWithRagAsync(question);
+            }
+            else if (question.StartsWith("/manual"))
             {
                 // Demonstration of manual tool calling behavior
                 var roi = new Domain.Rectangle(RoiX, RoiY, RoiWidth, RoiHeight);

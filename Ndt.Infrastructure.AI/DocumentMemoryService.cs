@@ -1,6 +1,8 @@
-﻿using Microsoft.SemanticKernel.Memory;
+﻿using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Memory;
 using Microsoft.SemanticKernel.Text;
-using Microsoft.SemanticKernel.Connectors.OpenAI;
+using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.Extensions.Configuration;
 using Ndt.Domain;
 
 namespace Ndt.Infrastructure.AI;
@@ -12,16 +14,15 @@ public class DocumentMemoryService : IDocumentMemoryService
 {
     private readonly ISemanticTextMemory _memory;
 
-    public DocumentMemoryService()
+    public DocumentMemoryService(IConfiguration configuration)
     {
+        var apiKey = configuration["AiSettings:GEMINI_API_KEY"];
+        var embeddingModelId = configuration["AiSettings:EmbeddingModelId"] ?? "gemini-embedding-001";
+
         // Initializing the Semantic Text Memory with a Volatile (in-memory) store.
         _memory = new MemoryBuilder()
             .WithMemoryStore(new VolatileMemoryStore())
-            // PLACEHOLDER: You need to configure an embedding generation service here.
-            // Example for OpenAI:
-            // .WithOpenAITextEmbeddingGeneration("text-embedding-3-small", "YOUR_API_KEY")
-            // Example for Google:
-            // .WithGoogleTextEmbeddingGeneration("models/embedding-001", "YOUR_API_KEY")
+            .WithGoogleAITextEmbeddingGeneration(modelId: embeddingModelId, apiKey: apiKey!)
             .Build();
     }
 
@@ -75,7 +76,7 @@ public class DocumentMemoryService : IDocumentMemoryService
         // Return the combined text parts separated by newlines.
         return string.Join(Environment.NewLine, contextParts);
     }
-
+ 
     public async Task DemoChunkingAndMemoryAsync()
     {
         // 1. הטקסט המקורי שלנו (נגיד שקראנו אותו עכשיו מקובץ)
