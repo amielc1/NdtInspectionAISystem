@@ -18,3 +18,9 @@ public interface IAiAnalysisService
     Task<string> AnalyzeWithHandlebarsAsync(byte[] image, string material, Rectangle? roi = null);
     Task<string> GetDocumentInsightAsync(string documentText, string insightType);
 }
+
+public interface IDocumentMemoryService
+{
+    Task ImportDocumentAsync(string documentText, string collectionName);
+    Task<string> SearchRelevantContextAsync(string collectionName, string userQuery, int limit = 2);
+}

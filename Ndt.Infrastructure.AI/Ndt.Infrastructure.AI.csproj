@@ -10,6 +10,9 @@
     <PackageReference Include="Microsoft.SemanticKernel.Plugins.Core" Version="1.30.0-alpha" />
     <PackageReference Include="Microsoft.SemanticKernel.PromptTemplates.Handlebars" Version="1.72.0" />
     <PackageReference Include="Microsoft.SemanticKernel.Planners.Handlebars" Version="1.47.0-preview" />
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.72.0" />
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.InMemory" Version="1.72.0-preview" />
+    <PackageReference Include="Microsoft.SemanticKernel.Plugins.Memory" Version="1.30.0-alpha" />
   </ItemGroup>
 
   <ItemGroup>
@@ -23,7 +26,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <NoWarn>$(NoWarn);SKEXP0050</NoWarn>
+    <NoWarn>$(NoWarn);SKEXP0050;SKEXP0001;SKEXP0003;SKEXP0011;SKEXP0052</NoWarn>
   </PropertyGroup>
 
 </Project>
