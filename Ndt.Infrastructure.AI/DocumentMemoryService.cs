@@ -2,6 +2,7 @@
 using Microsoft.SemanticKernel.Memory;
 using Microsoft.SemanticKernel.Text;
 using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.Chroma;
 using Microsoft.Extensions.Configuration;
 using Ndt.Domain;
 
@@ -18,10 +19,11 @@ public class DocumentMemoryService : IDocumentMemoryService
     {
         var apiKey = configuration["AiSettings:GEMINI_API_KEY"];
         var embeddingModelId = configuration["AiSettings:EmbeddingModelId"] ?? "gemini-embedding-001";
+        var chromaEndpoint = configuration["AiSettings:ChromaEndpoint"]!;
 
-        // Initializing the Semantic Text Memory with a Volatile (in-memory) store.
+        // Initializing the Semantic Text Memory with a persistent Chroma memory store.
         _memory = new MemoryBuilder()
-            .WithMemoryStore(new VolatileMemoryStore())
+            .WithMemoryStore(new ChromaMemoryStore(chromaEndpoint))
             .WithGoogleAITextEmbeddingGeneration(modelId: embeddingModelId, apiKey: apiKey!)
             .Build();
     }
@@ -60,8 +62,8 @@ public class DocumentMemoryService : IDocumentMemoryService
     public async Task<string> SearchRelevantContextAsync(string collectionName, string userQuery, int limit = 2)
     {
         // Search the specified collection for the user query.
-        var results = _memory.SearchAsync(collectionName, userQuery, limit: limit);
 
+        var results = _memory.SearchAsync(collectionName, userQuery, limit: limit, minRelevanceScore: 0.55); 
         var contextParts = new List<string>();
 
         await foreach (var result in results)
