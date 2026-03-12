@@ -1,0 +1,23 @@
+﻿classDiagram
+    class IAiAnalysisService {
+        <<interface>>
+        +ToolCallConfirmationAsync: Func~string, Task~bool~~
+        +AnalyzeImageAsync(image: byte[], defects: List~Defect~) Task~string~
+        +AskQuestionAboutImageAsync(image: byte[], userQuestion: string, roi: Rectangle?) Task~string~
+        +AskQuestionAsync(userQuestion: string) Task~string~
+        +AskQuestionWithRagAsync(userQuestion: string) Task~string~
+        +GetDocumentInsightAsync(documentText: string, insightType: string) Task~string~
+    }
+    class AiService {
+        -Kernel _kernel
+        -IImageProcessor _imageProcessor
+        -IDocumentMemoryService _memoryService
+        +AiService(kernel: Kernel, imageProcessor: IImageProcessor, memoryService: IDocumentMemoryService)
+        +AnalyzeImageAsync(...) Task~string~
+        +AskQuestionAboutImageAsync(...) Task~string~
+        +AskQuestionWithRagAsync(...) Task~string~
+        +GetDocumentInsightAsync(...) Task~string~
+    }
+    IAiAnalysisService <|.. AiService
+    AiService o-- IImageProcessor
+    AiService o-- IDocumentMemoryService

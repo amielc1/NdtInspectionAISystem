@@ -1,0 +1,12 @@
+﻿classDiagram
+    class IDocumentMemoryService {
+        <<interface>>
+        +ImportDocumentAsync(documentText: string, collectionName: string) Task
+        +SearchRelevantContextAsync(collectionName: string, userQuery: string, limit: int) Task~string~
+    }
+    class DocumentMemoryService {
+        -ISemanticTextMemory _memory
+        +ImportDocumentAsync(documentText: string, collectionName: string) Task
+        +SearchRelevantContextAsync(collectionName: string, userQuery: string, limit: int) Task~string~
+    }
+    IDocumentMemoryService <|.. DocumentMemoryService

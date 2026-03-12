@@ -1,0 +1,16 @@
+﻿classDiagram
+    class IImageProcessor {
+        <<interface>>
+        +ApplyHistogramStretching(inputImage: byte[], equalized: bool) byte[]
+        +DetectDefects(inputImage: byte[], roi: Rectangle) List~Defect~
+        +GenerateResultImage(inputImage: byte[], defects: List~Defect~) byte[]
+    }
+    class NdtImageProcessor {
+        +ApplyHistogramStretching(inputImage: byte[], equalized: bool) byte[]
+        +DetectDefects(inputImage: byte[], roi: Rectangle) List~Defect~
+        +GenerateResultImage(inputImage: byte[], defects: List~Defect~) byte[]
+        +ApplyHistogramStretching(input: Mat, equalized: bool) Mat
+        +DetectDefects(input: Mat, roi: OpenCvSharp.Rect) List~Defect~
+        +GenerateResultImage(input: Mat, defects: List~Defect~) Mat
+    }
+    IImageProcessor <|.. NdtImageProcessor

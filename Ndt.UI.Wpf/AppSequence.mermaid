@@ -1,0 +1,55 @@
+﻿sequenceDiagram
+    participant User
+    participant MainVM as MainViewModel
+    participant InsightVM as DocumentInsightsViewModel
+    participant ImgProc as NdtImageProcessor
+    participant AI as AiService
+    participant Memory as DocumentMemoryService
+    participant Kernel as SemanticKernel
+
+    %% AI Scan Flow
+    rect rgb(240, 240, 240)
+    Note over User, Kernel: AI Scan Workflow (Handlebars)
+    User->>MainVM: Click AI Scan
+    MainVM->>AI: AnalyzeWithHandlebarsAsync(Image, "Steel", ROI)
+    AI->>Kernel: Render Handlebars Template
+    AI->>Kernel: InvokePromptAsync(RenderedPrompt)
+    Kernel-->>AI: Analysis Result
+    AI-->>MainVM: Result string
+    MainVM-->>User: Display result
+    end
+
+    %% Manual Scan Flow
+    rect rgb(250, 240, 240)
+    Note over User, Kernel: Manual Scan Workflow
+    User->>MainVM: Click Manual Scan
+    MainVM->>ImgProc: DetectDefects(Image, ROI)
+    ImgProc-->>MainVM: List~Defect~
+    MainVM->>ImgProc: GenerateResultImage(Image, List~Defect~)
+    ImgProc-->>MainVM: Annotated Image
+    MainVM-->>User: Display annotated image + defect list
+    end
+
+    %% RAG Question Flow
+    rect rgb(230, 240, 250)
+    Note over User, Kernel: RAG Question Workflow
+    User->>MainVM: Ask question (RAG mode)
+    MainVM->>AI: AskQuestionWithRagAsync(question)
+    AI->>Memory: SearchRelevantContextAsync("NDT_Docs", question)
+    Memory-->>AI: Context
+    AI->>Kernel: InvokeAsync(ragFunction)
+    Kernel-->>AI: Answer
+    AI-->>MainVM: Answer string
+    MainVM-->>User: Display answer
+    end
+
+    %% Document Insight Flow
+    rect rgb(240, 250, 240)
+    Note over User, Kernel: Document Insight Workflow
+    User->>InsightVM: Upload & Analyze Document
+    InsightVM->>AI: GetDocumentInsightAsync(content, type)
+    AI->>Kernel: InvokeAsync("ConversationSummaryPlugin")
+    Kernel-->>AI: Insight
+    AI-->>InsightVM: Insight string
+    InsightVM-->>User: Display insight
+    end
