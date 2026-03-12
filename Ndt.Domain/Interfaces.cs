@@ -22,5 +22,7 @@ public interface IAiAnalysisService
 public interface IDocumentMemoryService
 {
     Task ImportDocumentAsync(string documentText, string collectionName);
+    Task DemoChunkingAndMemoryAsync();
     Task<string> SearchRelevantContextAsync(string collectionName, string userQuery, int limit = 2);
+    
 }

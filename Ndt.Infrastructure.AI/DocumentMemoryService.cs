@@ -34,7 +34,7 @@ public class DocumentMemoryService : IDocumentMemoryService
     {
         // Split text into lines with a maximum of 40 tokens each.
         var lines = TextChunker.SplitPlainTextLines(documentText, 40);
-        
+
         // Split lines into paragraphs with a maximum of 120 tokens and an overlap of 20 tokens.
         var paragraphs = TextChunker.SplitPlainTextParagraphs(lines, 120, 20);
 
@@ -60,9 +60,9 @@ public class DocumentMemoryService : IDocumentMemoryService
     {
         // Search the specified collection for the user query.
         var results = _memory.SearchAsync(collectionName, userQuery, limit: limit);
-        
+
         var contextParts = new List<string>();
-        
+
         await foreach (var result in results)
         {
             // Extract the text from the metadata of each search result.
@@ -74,5 +74,55 @@ public class DocumentMemoryService : IDocumentMemoryService
 
         // Return the combined text parts separated by newlines.
         return string.Join(Environment.NewLine, contextParts);
+    }
+
+    public async Task DemoChunkingAndMemoryAsync()
+    {
+        // 1. הטקסט המקורי שלנו (נגיד שקראנו אותו עכשיו מקובץ)
+        string documentText = @"
+ריתוך בקרן אלקטרונים (EBW) הוא תהליך ריתוך היתוך.
+בתהליך זה, אלומת אלקטרונים במהירות גבוהה מופעלת על החומרים המרותכים.
+האנרגיה הקינטית של האלקטרונים הופכת לחום בעת הפגיעה בחומר העבודה.
+החום גורם להמסת המתכת וליצירת החיבור.
+התהליך מתבצע לרוב בתנאי ריק (ואקום) כדי למנוע פיזור של אלומת האלקטרונים.
+";
+
+        Console.WriteLine("=== מתחילים תהליך חיתוך (Chunking) ===");
+
+        // 2. חלוקה לשורות: נגביל כל שורה למקסימום 15 טוקנים (כ-10 מילים).
+        // ה-Chunker מספיק חכם לא לחתוך מילה באמצע, אלא למצוא רווח או נקודה.
+        var lines = TextChunker.SplitPlainTextLines(documentText, maxTokensPerLine: 15);
+
+        Console.WriteLine($"\nהטקסט חולק ל-{lines.Count} שורות בסיסיות.");
+
+        // 3. חלוקה לפסקאות (עם חפיפה!): מקסימום 30 טוקנים לפסקה, עם 10 טוקנים שחופפים (Overlap).
+        var paragraphs = TextChunker.SplitPlainTextParagraphs(
+            lines,
+            maxTokensPerParagraph: 30,
+            overlapTokens: 10);
+
+        Console.WriteLine($"הטקסט אוגד ל-{paragraphs.Count} פסקאות חכמות (Chunks).\n");
+
+        // 4. שמירה בזיכרון (Ingestion לתוך ה-Vector Database)
+        string collectionName = "Welding_Knowledge_Base";
+
+        for (int i = 0; i < paragraphs.Count; i++)
+        {
+            string chunkText = paragraphs[i];
+            string uniqueId = $"chunk_ebw_{i}"; // מזהה ייחודי לכל חתיכה
+
+            Console.WriteLine($"[שומר את חתיכה {i} בזיכרון...]");
+            Console.WriteLine($"טקסט: {chunkText}");
+            Console.WriteLine("- - - - - - - - - - - - - - -");
+
+            // פקודת הקסם שמייצרת את הוקטור ושומרת במסד הנתונים!
+            await _memory.SaveInformationAsync(
+                collection: collectionName,
+                text: chunkText,
+                id: uniqueId
+            );
+        }
+
+        Console.WriteLine("\n=== סיום בהצלחה! המידע הוכנס לזיכרון הווקטורי ===");
     }
 }
