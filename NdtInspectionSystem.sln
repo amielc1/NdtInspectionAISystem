@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ndt.Infrastructure.AI", "Nd
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ndt.UI.Wpf", "Ndt.UI.Wpf\Ndt.UI.Wpf.csproj", "{0C240BD4-F39A-4C55-8B48-FA413608C330}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ndt.Api", "Ndt.Api\Ndt.Api.csproj", "{4BC23E8A-3AB8-4E6E-967D-8B702F78B9F0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -69,6 +71,18 @@ Global
 		{0C240BD4-F39A-4C55-8B48-FA413608C330}.Release|x64.Build.0 = Release|Any CPU
 		{0C240BD4-F39A-4C55-8B48-FA413608C330}.Release|x86.ActiveCfg = Release|Any CPU
 		{0C240BD4-F39A-4C55-8B48-FA413608C330}.Release|x86.Build.0 = Release|Any CPU
+		{4BC23E8A-3AB8-4E6E-967D-8B702F78B9F0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4BC23E8A-3AB8-4E6E-967D-8B702F78B9F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4BC23E8A-3AB8-4E6E-967D-8B702F78B9F0}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4BC23E8A-3AB8-4E6E-967D-8B702F78B9F0}.Debug|x64.Build.0 = Debug|Any CPU
+		{4BC23E8A-3AB8-4E6E-967D-8B702F78B9F0}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{4BC23E8A-3AB8-4E6E-967D-8B702F78B9F0}.Debug|x86.Build.0 = Debug|Any CPU
+		{4BC23E8A-3AB8-4E6E-967D-8B702F78B9F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4BC23E8A-3AB8-4E6E-967D-8B702F78B9F0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4BC23E8A-3AB8-4E6E-967D-8B702F78B9F0}.Release|x64.ActiveCfg = Release|Any CPU
+		{4BC23E8A-3AB8-4E6E-967D-8B702F78B9F0}.Release|x64.Build.0 = Release|Any CPU
+		{4BC23E8A-3AB8-4E6E-967D-8B702F78B9F0}.Release|x86.ActiveCfg = Release|Any CPU
+		{4BC23E8A-3AB8-4E6E-967D-8B702F78B9F0}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
