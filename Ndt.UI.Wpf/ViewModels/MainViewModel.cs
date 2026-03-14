@@ -67,6 +67,12 @@ public partial class MainViewModel : ObservableObject
     private bool _sendWithImage = true;
 
     [ObservableProperty]
+    private string _importText = string.Empty;
+
+    [ObservableProperty]
+    private string _importCollectionName = "NDT_Docs";
+
+    [ObservableProperty]
     private int _roiX = 0;
 
     [ObservableProperty]
@@ -215,6 +221,61 @@ public partial class MainViewModel : ObservableObject
             finally
             {
                 IsBusy = false;
+            }
+        }
+    }
+
+    [RelayCommand]
+    private async Task ImportContent()
+    {
+        if (string.IsNullOrWhiteSpace(ImportText))
+        {
+            StatusText = "Please enter text to import.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(ImportCollectionName))
+        {
+            StatusText = "Please enter a collection name.";
+            return;
+        }
+
+        try
+        {
+            IsBusy = true;
+            StatusText = $"Importing content to collection '{ImportCollectionName}'...";
+            await memoryService.ImportDocumentAsync(ImportText, ImportCollectionName);
+            StatusText = $"Imported successfully to '{ImportCollectionName}'.";
+            ImportText = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"Error importing content: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task LoadFileForImport()
+    {
+        var openFileDialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*"
+        };
+
+        if (openFileDialog.ShowDialog() == true)
+        {
+            try
+            {
+                ImportText = await File.ReadAllTextAsync(openFileDialog.FileName);
+                StatusText = $"Loaded file: {Path.GetFileName(openFileDialog.FileName)}";
+            }
+            catch (Exception ex)
+            {
+                StatusText = $"Error loading file: {ex.Message}";
             }
         }
     }
