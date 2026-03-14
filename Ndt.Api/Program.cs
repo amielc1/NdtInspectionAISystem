@@ -3,19 +3,19 @@ using Microsoft.SemanticKernel.Connectors.Google;
 using Ndt.Domain;
 using Ndt.Infrastructure.AI;
 using Ndt.Infrastructure.ImageProcessing;
-using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddUserSecrets<Program>();
 
 // --- Configure Dependency Injection ---
 
-// Read settings
+// Read settings 
 var aiSettings = builder.Configuration.GetSection("AiSettings");
 var apiKey = aiSettings["GEMINI_API_KEY"];
-var modelId = aiSettings["ModelId"] ?? "gemini-2.0-flash";
+var modelId = aiSettings["ModelId"];
 
 // 1. Register Semantic Kernel instance
-builder.Services.AddTransient<Kernel>(sp => 
+builder.Services.AddTransient<Kernel>(sp =>
 {
     var kernelBuilder = Kernel.CreateBuilder();
     kernelBuilder.AddGoogleAIGeminiChatCompletion(modelId, apiKey!);
@@ -84,4 +84,5 @@ app.Run();
 
 // --- DTOs (Records) ---
 public record ImportRequest(string Text, string CollectionName);
+
 public record AskRequest(string Question);
